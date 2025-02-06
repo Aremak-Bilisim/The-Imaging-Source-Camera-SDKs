@@ -1,0 +1,24 @@
+[submodule "external/ic4-examples"]
+	path = external/ic4-examples
+	url = https://github.com/TheImagingSource/ic4-examples.git
+[submodule "external/tiscamera"]
+	path = external/tiscamera
+	url = https://github.com/TheImagingSource/tiscamera.git
+[submodule "external/tcam-firmware-update"]
+	path = external/tcam-firmware-update
+	url = https://github.com/TheImagingSource/tcam-firmware-update.git
+[submodule "external/Linux-tiscamera-Programming-Samples"]
+	path = external/Linux-tiscamera-Programming-Samples
+	url = https://github.com/TheImagingSource/Linux-tiscamera-Programming-Samples.git
+[submodule "external/tiscamera-contributions"]
+	path = external/tiscamera-contributions
+	url = https://github.com/TheImagingSource/tiscamera-contributions.git
+[submodule "external/tiscamera-tcamprop"]
+	path = external/tiscamera-tcamprop
+	url = https://github.com/TheImagingSource/tiscamera-tcamprop.git
+[submodule "external/face-mask-detection"]
+	path = external/face-mask-detection
+	url = https://github.com/TheImagingSource/face-mask-detection.git
+[submodule "external/Windows-Sample-Image-and-AVI-Capture"]
+	path = external/Windows-Sample-Image-and-AVI-Capture
+	url = https://github.com/TheImagingSource/Windows-Sample-Image-and-AVI-Capture.git
