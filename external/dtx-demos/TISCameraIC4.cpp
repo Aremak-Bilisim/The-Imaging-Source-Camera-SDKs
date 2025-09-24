@@ -131,7 +131,27 @@ bool TISCameraIC4::setExposure(double exposureUs) {
     }
 }
 
+double TISCameraIC4::getExposure() {
+    if (!isConnected) {
+        std::cerr << "Camera not connected." << std::endl;
+        return false;
+    }
 
+    try {
+
+        auto map = grabber.devicePropertyMap();
+        auto propExposureTime = map.find(ic4::PropId::ExposureTime);
+        if (propExposureTime.is_valid() && propExposureTime.isAvailable()) {
+                return propExposureTime.getValue();
+                 
+        }
+
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Error setting exposure: " << e.what() << std::endl;
+        return false;
+    }
+}
 
 //// Set exposure time in milliseconds (convenience method)
 //bool TISCameraIC4::setExposureMs(double exposureMs) {
