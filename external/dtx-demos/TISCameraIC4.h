@@ -32,12 +32,6 @@ public:
     // Set exposure time in microseconds
     bool setExposure(double exposureUs);
 
-    // Set exposure time in milliseconds (convenience method)
-    bool setExposureMs(double exposureMs);
-
-    // Enable/disable auto exposure
-    bool setAutoExposure(bool enable);
-
     // Get current exposure value
     double getExposure();
 
