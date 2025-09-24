@@ -320,17 +320,12 @@ bool TISCameraIC4::startGrabbing() {
             // Create a cv::Mat pointing into the BGR8 buffer
             auto mat = ic4interop::OpenCV::wrap(*buffer);
 
-            std::cout << "Displaying captured image" << std::endl;
             cv::imshow("display", mat);
-
-            std::cout << "Focus display window and press any key to continue..." << std::endl;;
-            cv::waitKey(1);
-
-            //// Blur the image in place (this still uses the ImageBuffer's memory)
-            //cv::blur(mat, mat, cv::Size(75, 75));
-
-            //std::cout << "Displaying blurred image" << std::endl;
-            //cv::imshow("display", mat);
+            int key = cv::waitKey(1);
+            if (key == 27) { 
+                std::cout << "ESC key pressed. Exiting display loop..." << std::endl;
+                break;
+            }
         }
 
         isGrabbing = false;
@@ -338,6 +333,7 @@ bool TISCameraIC4::startGrabbing() {
         return true;
 
     }
+
     catch (const std::exception& e) {
         std::cerr << "Error during grabbing: " << e.what() << std::endl;
 
