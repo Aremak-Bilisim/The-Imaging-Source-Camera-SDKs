@@ -12,9 +12,18 @@ private:
     bool isConnected;
     bool isGrabbing;
 
-	ic4::DeviceInfo device;
+    ic4::DeviceInfo device;
 
     std::string formatDeviceInfo(const ic4::DeviceInfo& device_info);
+
+    // Exposure control variables
+    double minExposure;
+    double maxExposure;
+    double currentExposure;
+    int sliderValue;
+
+    // Static callback function for trackbar
+    static void onExposureChange(int value, void* userdata);
 
 public:
     TISCameraIC4();
@@ -41,7 +50,7 @@ public:
     // Display current exposure information
     void displayExposureInfo();
 
-    // Start grabbing frames
+    // Start grabbing frames with parameter control window
     bool startGrabbing();
 
     // Stop grabbing
@@ -53,8 +62,15 @@ public:
     // Check if camera is grabbing
     bool grabbing() const { return isGrabbing; }
 
-
     bool toggleAutoExposureMode();
+
+    // Initialize parameter control window
+    void initParameterControlWindow();
+
+    // Update slider from current exposure value
+    void updateSliderFromExposure();
+
+	void updateParameterDisplay();
 };
 
 #endif // TISCAMERAIC4_H
