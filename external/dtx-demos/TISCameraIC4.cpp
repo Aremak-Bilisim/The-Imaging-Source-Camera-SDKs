@@ -336,12 +336,12 @@ bool TISCameraIC4::startGrabbing() {
                 break;
             }
             else if (key == 'i') {
-				exp += 100.0;
+				exp += 1000.0;
                 setExposure(exp);
             }
             else if (key == 'd') {
 
-                exp -= 100.0;
+                exp -= 1000.0;
                 setExposure(exp);
             }
         }
