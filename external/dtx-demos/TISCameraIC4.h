@@ -30,19 +30,19 @@ public:
     void disconnect();
 
     // Set exposure time in microseconds
-    //bool setExposure(double exposureUs);
+    bool setExposure(double exposureUs);
 
-    //// Set exposure time in milliseconds (convenience method)
-    //bool setExposureMs(double exposureMs);
+    // Set exposure time in milliseconds (convenience method)
+    bool setExposureMs(double exposureMs);
 
-    //// Enable/disable auto exposure
-    //bool setAutoExposure(bool enable);
+    // Enable/disable auto exposure
+    bool setAutoExposure(bool enable);
 
-    //// Get current exposure value
-    //double getExposure();
+    // Get current exposure value
+    double getExposure();
 
-    //// Get exposure range
-    //bool getExposureRange(double& min, double& max);
+    // Get exposure range
+    bool getExposureRange(double& min, double& max);
 
     // Display current exposure information
     void displayExposureInfo();
@@ -58,6 +58,9 @@ public:
 
     // Check if camera is grabbing
     bool grabbing() const { return isGrabbing; }
+
+
+    bool toggleAutoExposureMode();
 };
 
 #endif // TISCAMERAIC4_H

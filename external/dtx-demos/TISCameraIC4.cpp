@@ -70,6 +70,7 @@ bool TISCameraIC4::connect(int cameraIndex) {
         
         // Display current exposure settings
         displayExposureInfo();
+        toggleAutoExposureMode();
         
         return true;
         
@@ -90,40 +91,48 @@ void TISCameraIC4::disconnect() {
     }
 }
 
-//// Set exposure time in microseconds
-//bool TISCameraIC4::setExposure(double exposureUs) {
-//    if (!isConnected) {
-//        std::cerr << "Camera not connected." << std::endl;
-//        return false;
-//    }
-//    
-//    try {
-//        auto propExposure = device.getProperty(ic4::PropId::ExposureTime);
-//        if (!propExposure.isValid()) {
-//            std::cerr << "Exposure property not available." << std::endl;
-//            return false;
-//        }
-//        
-//        if (!propExposure.isAvailable()) {
-//            std::cerr << "Exposure property not available for this camera." << std::endl;
-//            return false;
-//        }
-//        
-//        if (!propExposure.trySetValue(exposureUs)) {
-//            std::cerr << "Failed to set exposure value." << std::endl;
-//            return false;
-//        }
-//        
-//        std::cout << "Exposure set to: " << exposureUs << " 탎 (" << (exposureUs / 1000.0) << " ms)" << std::endl;
-//        displayExposureInfo();
-//        return true;
-//        
-//    } catch (const std::exception& e) {
-//        std::cerr << "Error setting exposure: " << e.what() << std::endl;
-//        return false;
-//    }
-//}
-//
+bool TISCameraIC4::toggleAutoExposureMode() {
+    if (!isConnected) {
+        std::cerr << "Camera not connected." << std::endl;
+        return false;
+    }
+
+    try {
+        auto map = grabber.devicePropertyMap();
+        map.setValue(ic4::PropId::ExposureAuto, "Off");
+        displayExposureInfo();
+
+        return true;
+
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Error setting exposure: " << e.what() << std::endl;
+        return false;
+    }
+}
+
+// Set exposure time in microseconds
+bool TISCameraIC4::setExposure(double exposureUs) {
+    if (!isConnected) {
+        std::cerr << "Camera not connected." << std::endl;
+        return false;
+    }
+    
+    try {
+        auto map = grabber.devicePropertyMap();
+        map.setValue(ic4::PropId::ExposureTime, exposureUs);
+        displayExposureInfo();
+
+        return true;
+        
+    } catch (const std::exception& e) {
+        std::cerr << "Error setting exposure: " << e.what() << std::endl;
+        return false;
+    }
+}
+
+
+
 //// Set exposure time in milliseconds (convenience method)
 //bool TISCameraIC4::setExposureMs(double exposureMs) {
 //    return setExposure(exposureMs * 1000.0);
@@ -228,8 +237,8 @@ void TISCameraIC4::disconnect() {
 //        return false;
 //    }
 //}
-//
-//// Display current exposure information
+
+
 // Display current exposure information
 void TISCameraIC4::displayExposureInfo() {
     if (!isConnected) {
@@ -245,7 +254,7 @@ void TISCameraIC4::displayExposureInfo() {
             return;
         }
 
-        std::cout << "=== Exposure Information ===" << std::endl;
+        std::cout << std::endl << "=== Exposure Information ===" << std::endl;
 
         // Manual exposure time property
         auto propExposureTime = map.find(ic4::PropId::ExposureTime);
@@ -253,7 +262,7 @@ void TISCameraIC4::displayExposureInfo() {
             if (propExposureTime.isAvailable()) {
                 double currentValue = propExposureTime.getValue();
                 if (!err.isError()) {
-                    std::cout << "Current Exposure: " << currentValue << " 탎 ("
+                    std::cout << "Current Exposure: " << currentValue << " mircosecond ("
                         << (currentValue / 1000.0) << " ms)" << std::endl;
                 }
 
@@ -261,9 +270,9 @@ void TISCameraIC4::displayExposureInfo() {
                 double minVal = propExposureTime.minimum();
                 double maxVal = propExposureTime.maximum();
                 double step = propExposureTime.increment();
-                        std::cout << "Exposure Range: " << propExposureTime.minimum() << " 탎 to " << propExposureTime.maximum() << " 탎 ("
+                        std::cout << "Exposure Range: " << propExposureTime.minimum() << " mircosecond to " << propExposureTime.maximum() << " mircosecond ("
                             << (minVal / 1000.0) << " ms to " << (maxVal / 1000.0) << " ms)" << std::endl;
-                        std::cout << "Step size: " << step << " 탎" << std::endl;
+                        std::cout << "Step size: " << step << " mircosecond" << std::endl;
                     
                 }
 
@@ -282,15 +291,13 @@ void TISCameraIC4::displayExposureInfo() {
             }
         }
 
-        std::cout << "============================" << std::endl;
+        std::cout << "============================" << std::endl << std::endl;
     }
     catch (const std::exception& e) {
         std::cerr << "Error displaying exposure info: " << e.what() << std::endl;
     }
     
 }
-
-
 
 // Start grabbing frames
 bool TISCameraIC4::startGrabbing() {
@@ -313,6 +320,8 @@ bool TISCameraIC4::startGrabbing() {
         auto sink = ic4::SnapSink::create(ic4::PixelFormat::BGR8);
         grabber.streamSetup(sink);
 
+        double exp = 5000.0;
+
         while (true)
         {   // Snap image from running data stream
             auto buffer = sink->snapSingle(1000);
@@ -325,6 +334,15 @@ bool TISCameraIC4::startGrabbing() {
             if (key == 27) { 
                 std::cout << "ESC key pressed. Exiting display loop..." << std::endl;
                 break;
+            }
+            else if (key == 'i') {
+				exp += 100.0;
+                setExposure(exp);
+            }
+            else if (key == 'd') {
+
+                exp -= 100.0;
+                setExposure(exp);
             }
         }
 
