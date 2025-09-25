@@ -6,12 +6,50 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 
+
+
+
+// Define QueueSinkListener-derived class that saves all received frames in bitmap files
+class GrabbingImage : public ic4::QueueSinkListener
+{
+private:
+    int counter_;
+
+public:
+    GrabbingImage():
+        counter_(0)
+    {
+    }
+
+    // Inherited via QueueSinkListener, called when there are frames available in the sink's output queue
+    void framesQueued(ic4::QueueSink& sink) override
+    {
+        ic4::Error err;
+
+        while (true)
+        {
+            // Remove a buffer from the sink's output queue
+            auto buffer = sink.popOutputBuffer(err);
+            if (buffer == nullptr)
+            {
+                // No more buffers available, return
+                return;
+            }
+
+
+			std::cout << "Count: " << counter_ << std::endl;
+            counter_ += 1;
+        }
+    }
+};
+
+
 class TISCameraIC4 {
 private:
     ic4::Grabber grabber;
     bool isConnected;
     bool isGrabbing;
-
+    bool triggermodeEnabled = true;
     ic4::DeviceInfo device;
 
     std::string formatDeviceInfo(const ic4::DeviceInfo& device_info);
@@ -21,6 +59,12 @@ private:
     double maxExposure;
     double currentExposure;
     int sliderValue;
+
+    int width = 640;
+    int height = 480;
+
+    bool triggerModeEnabled = false;
+    std::string currentTriggerSource = "Software";
 
     // Static callback function for trackbar
     static void onExposureChange(int value, void* userdata);
@@ -71,6 +115,15 @@ public:
     void updateSliderFromExposure();
 
 	void updateParameterDisplay();
+
+    bool enableTriggerMode();
+    bool disableTriggerMode();
+    bool setTriggerSource(const std::string& source = "Software"); // "Software", "Line1", etc.
+    bool sendSoftwareTrigger();
+    bool isTriggerModeEnabled();
+    void displayTriggerInfo();
+    // Trigger configuration
+    bool configureTrigger(const std::string& source = "Software", double delay = 0.0);
 };
 
 #endif // TISCAMERAIC4_H
