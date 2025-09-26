@@ -14,13 +14,12 @@ TISCameraIC4::~TISCameraIC4() {
 
 
 
-// Initialize parameter control window
 void TISCameraIC4::initParameterControlWindow() {
     // Create a resizable window
     cv::namedWindow("Parameter Control", cv::WINDOW_NORMAL);
 
-    // Resize window to something bigger
-    cv::resizeWindow("Parameter Control", 800, 200);
+    // Resize window to something bigger (increased height for new info)
+    cv::resizeWindow("Parameter Control", 800, 250); // Increased from 200 to 250
 
     // Get exposure range
     getExposureRange(minExposure, maxExposure);
@@ -31,20 +30,8 @@ void TISCameraIC4::initParameterControlWindow() {
         &sliderValue, 100000,
         onExposureChange, this);
 
-    // Make a larger control panel image
-    cv::Mat controlPanel = cv::Mat::zeros(200, 800, CV_8UC3);
-
-    // Display current exposure value instead of slider value
-    std::string exposureText = "Current Exposure: " +
-        std::to_string(currentExposure / 1000.0).substr(0, 6) +
-        " ms";
-
-    cv::putText(controlPanel, exposureText, cv::Point(20, 60),
-        cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(255, 255, 255), 2);
-    cv::putText(controlPanel, "ESC to exit", cv::Point(20, 120),
-        cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(200, 200, 200), 2);
-
-    cv::imshow("Parameter Control", controlPanel);
+    // Initial display
+    updateParameterDisplay();
 }
 
 // Update slider position from current exposure
@@ -60,20 +47,42 @@ void TISCameraIC4::updateSliderFromExposure() {
     }
 }
 
-// Add this method to update the display with current exposure value
 void TISCameraIC4::updateParameterDisplay() {
-    cv::Mat controlPanel = cv::Mat::zeros(200, 800, CV_8UC3);
+    cv::Mat controlPanel = cv::Mat::zeros(250, 800, CV_8UC3);
 
-    std::string exposureText = "Current Exposure: " + std::to_string(currentExposure / 1000.0).substr(0, 6) +
-        " ms";
+    std::string exposureText = "Current Exposure: " +
+        std::to_string(currentExposure / 1000.0).substr(0, 6) + " ms";
 
-    cv::putText(controlPanel, exposureText, cv::Point(20, 60),
-        cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(255, 255, 255), 2);
-    cv::putText(controlPanel, "ESC to exit", cv::Point(20, 120),
-        cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(200, 200, 200), 2);
+    std::string triggerText = "Trigger Mode: " +
+        std::string(triggerModeEnabled ? "ENABLED" : "DISABLED");
+
+    std::string triggerSourceText = "Trigger Source: " + currentTriggerSource;
+
+    cv::putText(controlPanel, exposureText, cv::Point(20, 40),
+        cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(255, 255, 255), 2);
+
+    cv::putText(controlPanel, triggerText, cv::Point(20, 80),
+        cv::FONT_HERSHEY_SIMPLEX, 0.7,
+        triggerModeEnabled ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 165, 255), 2);
+
+    cv::putText(controlPanel, triggerSourceText, cv::Point(20, 110),
+        cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(200, 200, 255), 1);
+
+    // Updated control instructions
+    std::string instructions = "Controls: ESC=Exit, t=Toggle Trigger, s=Software Trigger";
+    cv::putText(controlPanel, instructions, cv::Point(20, 150),
+        cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(200, 200, 200), 1);
+
+    // Updated status hint
+    std::string triggerHint = triggerModeEnabled ?
+        "Press 's' to send software trigger" : "Free-run mode active";
+    cv::putText(controlPanel, triggerHint, cv::Point(20, 180),
+        cv::FONT_HERSHEY_SIMPLEX, 0.5,
+        triggerModeEnabled ? cv::Scalar(0, 255, 255) : cv::Scalar(255, 255, 0), 1);
 
     cv::imshow("Parameter Control", controlPanel);
 }
+
 
 // Also update the onExposureChange to refresh the display
 void TISCameraIC4::onExposureChange(int value, void* userdata) {
@@ -378,9 +387,17 @@ bool TISCameraIC4::startGrabbing() {
             }
 
             // Handle software trigger if trigger mode is enabled
-            if ((key == 't' || key == 'T') && triggerModeEnabled) {
+            if ((key == 's' || key == 'S') && triggerModeEnabled) {
                 if (!sendSoftwareTrigger()) {
                     std::cerr << "Failed to send software trigger." << std::endl;
+                }
+            }
+
+            // Handle 't' to toggle trigger mode
+            if (key == 't' || key == 'T') {
+                if (toggleTriggerMode()) {
+                    std::cout << "Trigger mode " << (triggerModeEnabled ? "ENABLED" : "DISABLED") << std::endl;
+                    displayTriggerInfo(); // Optional: show updated trigger info
                 }
             }
 
@@ -401,9 +418,7 @@ bool TISCameraIC4::startGrabbing() {
                     lastTime = currentTime;
                 }
             }
-
-            // Small delay to prevent excessive CPU usage
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            
         }
 
         // Cleanup after loop exits
@@ -482,6 +497,24 @@ bool TISCameraIC4::enableTriggerMode() {
         return false;
     }
 }
+
+
+
+// Implementation (cpp file)
+bool TISCameraIC4::toggleTriggerMode() {
+    if (!isConnected) {
+        std::cerr << "Camera not connected." << std::endl;
+        return false;
+    }
+
+    if (triggerModeEnabled) {
+        return disableTriggerMode();
+    }
+    else {
+        return enableTriggerMode();
+    }
+}
+
 
 // Disable trigger mode (free-run mode)
 bool TISCameraIC4::disableTriggerMode() {

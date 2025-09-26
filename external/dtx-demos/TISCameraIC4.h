@@ -132,6 +132,7 @@ public:
     void updateParameterDisplay();
     bool enableTriggerMode();
     bool disableTriggerMode();
+    bool toggleTriggerMode();
     bool setTriggerSource(const std::string& source = "Software"); // "Software", "Line1", etc.
     bool sendSoftwareTrigger();
     bool isTriggerModeEnabled();
