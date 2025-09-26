@@ -318,7 +318,6 @@ bool TISCameraIC4::startGrabbing() {
     }
 
     try {
-        cv::namedWindow("display");
 
         // Initialize the parameter control window
         initParameterControlWindow();
@@ -329,7 +328,7 @@ bool TISCameraIC4::startGrabbing() {
 		ic4::Error err;
 		GrabbingImage listener;
         auto map = grabber.devicePropertyMap(err);
-        auto sink = ic4::QueueSink::create(listener, err);
+        auto sink = ic4::QueueSink::create(listener, ic4::PixelFormat::BGR8, err);
         
         if (!sink)
         {
@@ -350,6 +349,8 @@ bool TISCameraIC4::startGrabbing() {
         std::cout << "Starting camera feed. Use the exposure slider in 'Parameter Control' window." << std::endl;
         std::cout << "Press ESC to exit, 't' to trigger (if trigger mode enabled)..." << std::endl;
 
+		double exp = getExposure();
+
         while (isGrabbing) {
 
 
@@ -364,6 +365,9 @@ bool TISCameraIC4::startGrabbing() {
                 continue;
             }
 
+            displayExposureInfo();
+            setExposure(exp);
+			exp += 1000;
             //int key = cv::waitKey(1) & 0xFF;
 
             //// Check for ESC key to exit
@@ -638,7 +642,7 @@ bool TISCameraIC4::configureTrigger(const std::string& source, double delay) {
         }
 
         // Enable trigger mode
-        map.setValue(ic4::PropId::TriggerMode, "On");
+        map.setValue(ic4::PropId::TriggerMode, "Off");
 
         triggerModeEnabled = true;
         currentTriggerSource = source;

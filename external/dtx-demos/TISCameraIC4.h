@@ -14,10 +14,11 @@ class GrabbingImage : public ic4::QueueSinkListener
 {
 private:
     int counter_;
+    bool window_created_;
 
 public:
-    GrabbingImage():
-        counter_(0)
+    GrabbingImage() :
+        counter_(0), window_created_(false)
     {
     }
 
@@ -25,6 +26,13 @@ public:
     void framesQueued(ic4::QueueSink& sink) override
     {
         ic4::Error err;
+
+        // Create the window on first frame arrival
+        if (!window_created_)
+        {
+            cv::namedWindow("display");
+            window_created_ = true;
+        }
 
         while (true)
         {
@@ -36,13 +44,19 @@ public:
                 return;
             }
 
+            auto mat = ic4interop::OpenCV::wrap(*buffer);
+            cv::imwrite("a.png", mat);
+            cv::imshow("display", mat);
 
-			std::cout << "Count: " << counter_ << std::endl;
+            // You'll need this to actually display the window and handle events
+            // Use a small delay instead of 0 to keep the window responsive
+            cv::waitKey(1);
+
+            std::cout << "Count: " << counter_ << std::endl;
             counter_ += 1;
         }
     }
 };
-
 
 class TISCameraIC4 {
 private:
