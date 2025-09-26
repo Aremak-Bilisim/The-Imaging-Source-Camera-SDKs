@@ -73,89 +73,86 @@ int main() {
 
     CalculatorResults* VC1Result = nullptr;
 
-    while (true) {
-        pVmPrc->Run();
+    pVmPrc->Run();
 
-        VC1Result = VariableCalculation1Module->GetResult();
-        if (VC1Result == nullptr) {
-            std::cout << "Failed to get Varible Calculation 1 results" << std::endl;
-        }
-        else {
-            std::cout << "Got the results" << std::endl;
-        }
-
-
-
-
-        // TODO I WANT TO SEE MY RESULT HERE
-        std::cout << "\n--- Variable Calculation Results ---" << std::endl;
-
-        // Get the total number of result parameters
-        int resultCount = VC1Result->GetResultNum();
-        std::cout << "Found " << resultCount << " result parameter(s)." << std::endl;
-
-        // Loop through each result parameter (e.g., "myIntegers", "myFloats")
-        for (int i = 0; i < resultCount; ++i)
-        {
-            // Get the result info object at the current index
-            CalOutputResultInfo* resultInfo = VC1Result->GetResult(i);
-            if (resultInfo != nullptr)
-            {
-                // Print the name of the result parameter
-                std::cout << "\n  Parameter " << i << ": '" << resultInfo->strParamName << "'";
-                std::cout << " (" << resultInfo->nValueNum << " value(s))" << std::endl;
-
-                // Check the type of the result and print the corresponding values
-                switch (resultInfo->nParamType)
-                {
-                case 1: // Integer Type
-                    std::cout << "  Type: Integer" << std::endl;
-                    if (resultInfo->pIntValue != nullptr)
-                    {
-                        std::cout << "  Values: [";
-                        // Loop through the array of integer values
-                        for (int j = 0; j < resultInfo->nValueNum; ++j)
-                        {
-                            std::cout << resultInfo->pIntValue[j] << (j == resultInfo->nValueNum - 1 ? "" : ", ");
-                        }
-                        std::cout << "]" << std::endl;
-                    }
-                    break;
-
-                case 2: // Float Type
-                    std::cout << "  Type: Float" << std::endl;
-                    if (resultInfo->pFloatValue != nullptr)
-                    {
-                        std::cout << "  Values: [";
-                        // Loop through the array of float values
-                        for (int j = 0; j < resultInfo->nValueNum; ++j)
-                        {
-                            std::cout << resultInfo->pFloatValue[j] << (j == resultInfo->nValueNum - 1 ? "" : ", ");
-                        }
-                        std::cout << "]" << std::endl;
-                    }
-                    break;
-
-                case 3: // String Type
-                    std::cout << "  Type: String" << std::endl;
-                    std::cout << "  Note: The provided struct does not contain a member to access string data." << std::endl;
-                    // String data might need to be retrieved using a different function if available in your SDK version.
-                    break;
-
-                default:
-                    std::cout << "  Type: Unknown or unsupported (Type code: " << resultInfo->nParamType << ")" << std::endl;
-                    break;
-                }
-            }
-            else
-            {
-                std::cerr << "  Failed to get result at index " << i << std::endl;
-            }
-        }
-        std::cout << "\n------------------------------------" << std::endl;
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    VC1Result = VariableCalculation1Module->GetResult();
+    if (VC1Result == nullptr) {
+        std::cout << "Failed to get Varible Calculation 1 results" << std::endl;
     }
+    else {
+        std::cout << "Got the results" << std::endl;
+    }
+
+
+
+
+    // TODO I WANT TO SEE MY RESULT HERE
+    std::cout << "\n--- Variable Calculation Results ---" << std::endl;
+
+    // Get the total number of result parameters
+    int resultCount = VC1Result->GetResultNum();
+    std::cout << "Found " << resultCount << " result parameter(s)." << std::endl;
+
+    // Loop through each result parameter (e.g., "myIntegers", "myFloats")
+    for (int i = 0; i < resultCount; ++i)
+    {
+        // Get the result info object at the current index
+        CalOutputResultInfo* resultInfo = VC1Result->GetResult(i);
+        if (resultInfo != nullptr)
+        {
+            // Print the name of the result parameter
+            std::cout << "\n  Parameter " << i << ": '" << resultInfo->strParamName << "'";
+            std::cout << " (" << resultInfo->nValueNum << " value(s))" << std::endl;
+
+            // Check the type of the result and print the corresponding values
+            switch (resultInfo->nParamType)
+            {
+            case 1: // Integer Type
+                std::cout << "  Type: Integer" << std::endl;
+                if (resultInfo->pIntValue != nullptr)
+                {
+                    std::cout << "  Values: [";
+                    // Loop through the array of integer values
+                    for (int j = 0; j < resultInfo->nValueNum; ++j)
+                    {
+                        std::cout << resultInfo->pIntValue[j] << (j == resultInfo->nValueNum - 1 ? "" : ", ");
+                    }
+                    std::cout << "]" << std::endl;
+                }
+                break;
+
+            case 2: // Float Type
+                std::cout << "  Type: Float" << std::endl;
+                if (resultInfo->pFloatValue != nullptr)
+                {
+                    std::cout << "  Values: [";
+                    // Loop through the array of float values
+                    for (int j = 0; j < resultInfo->nValueNum; ++j)
+                    {
+                        std::cout << resultInfo->pFloatValue[j] << (j == resultInfo->nValueNum - 1 ? "" : ", ");
+                    }
+                    std::cout << "]" << std::endl;
+                }
+                break;
+
+            case 3: // String Type
+                std::cout << "  Type: String" << std::endl;
+                std::cout << "  Note: The provided struct does not contain a member to access string data." << std::endl;
+                // String data might need to be retrieved using a different function if available in your SDK version.
+                break;
+
+            default:
+                std::cout << "  Type: Unknown or unsupported (Type code: " << resultInfo->nParamType << ")" << std::endl;
+                break;
+            }
+        }
+        else
+        {
+            std::cerr << "  Failed to get result at index " << i << std::endl;
+        }
+    }
+    std::cout << "\n------------------------------------" << std::endl;
+
 
 
 
@@ -200,7 +197,7 @@ int main() {
     
 
 
-    /*ic4::initLibrary();
+    ic4::initLibrary();
 
     TISCameraIC4 camera;
     camera.listCameras();
@@ -230,7 +227,7 @@ int main() {
 
     camera.stopGrabbing();
 
-    ic4::exitLibrary(); // don’t forget cleanup*/
+    ic4::exitLibrary(); // don’t forget cleanup
     
     return 0;
 }
