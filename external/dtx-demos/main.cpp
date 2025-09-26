@@ -185,13 +185,7 @@ int main() {
         std::cout << "Reserved Fields: " << (hasNonZeroReserved ? "Contains data" : "All zeros") << std::endl;
     }
 
-    // Print list reserved fields
-    std::cout << "\nList Reserved Fields: ";
-    for (int i = 0; i < 4; i++) {
-        std::cout << "0x" << std::hex << moduInfoList->nReserved[i] << std::dec;
-        if (i < 3) std::cout << ", ";
-    }
-    std::cout << std::endl;
+    
 
 
     
@@ -227,7 +221,7 @@ int main() {
 
     camera.stopGrabbing();
 
-    ic4::exitLibrary(); // don’t forget cleanup
+    //ic4::exitLibrary(); // don’t forget cleanup
     
     return 0;
 }

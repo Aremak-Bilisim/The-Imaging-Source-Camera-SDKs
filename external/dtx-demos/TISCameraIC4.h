@@ -1,38 +1,28 @@
 #ifndef TISCAMERAIC4_H
 #define TISCAMERAIC4_H
-
 #include <ic4/ic4.h>
 #include <ic4-interop/interop-OpenCV.h>
 #include <string>
 #include <opencv2/opencv.hpp>
+#include <mutex>
+#include <atomic>
 
-
-
-
-// Define QueueSinkListener-derived class that saves all received frames in bitmap files
+// Define QueueSinkListener-derived class that stores the latest frame
 class GrabbingImage : public ic4::QueueSinkListener
 {
 private:
-    int counter_;
-    bool window_created_;
+    std::mutex frame_mutex_;
+    cv::Mat latest_frame_;
+    std::atomic<bool> new_frame_available_{ false };
+    int counter_{ 0 };
 
 public:
-    GrabbingImage() :
-        counter_(0), window_created_(false)
-    {
-    }
+    GrabbingImage() = default;
 
     // Inherited via QueueSinkListener, called when there are frames available in the sink's output queue
     void framesQueued(ic4::QueueSink& sink) override
     {
         ic4::Error err;
-
-        // Create the window on first frame arrival
-        if (!window_created_)
-        {
-            cv::namedWindow("display");
-            window_created_ = true;
-        }
 
         while (true)
         {
@@ -45,17 +35,41 @@ public:
             }
 
             auto mat = ic4interop::OpenCV::wrap(*buffer);
-            cv::imwrite("a.png", mat);
-            cv::imshow("display", mat);
 
-            // You'll need this to actually display the window and handle events
-            // Use a small delay instead of 0 to keep the window responsive
-            cv::waitKey(1);
+            // Store the latest frame with thread safety
+            {
+                std::lock_guard<std::mutex> lock(frame_mutex_);
+                latest_frame_ = mat.clone(); // Clone to ensure we have our own copy
+                new_frame_available_ = true;
+            }
 
-            std::cout << "Count: " << counter_ << std::endl;
             counter_ += 1;
+            // Optional: print frame count occasionally
+            if (counter_ % 30 == 0) {
+                std::cout << "Frames received: " << counter_ << std::endl;
+            }
         }
     }
+
+    // Get the latest frame (thread-safe)
+    bool getLatestFrame(cv::Mat& frame)
+    {
+        std::lock_guard<std::mutex> lock(frame_mutex_);
+        if (!latest_frame_.empty()) {
+            frame = latest_frame_.clone();
+            new_frame_available_ = false;
+            return true;
+        }
+        return false;
+    }
+
+    // Check if a new frame is available
+    bool isNewFrameAvailable() const
+    {
+        return new_frame_available_;
+    }
+
+    int getFrameCount() const { return counter_; }
 };
 
 class TISCameraIC4 {
@@ -65,7 +79,6 @@ private:
     bool isGrabbing;
     bool triggermodeEnabled = true;
     ic4::DeviceInfo device;
-
     std::string formatDeviceInfo(const ic4::DeviceInfo& device_info);
 
     // Exposure control variables
@@ -73,12 +86,14 @@ private:
     double maxExposure;
     double currentExposure;
     int sliderValue;
-
     int width = 640;
     int height = 480;
-
     bool triggerModeEnabled = false;
     std::string currentTriggerSource = "Software";
+
+    // Frame grabbing
+    std::shared_ptr<GrabbingImage> frameListener;
+    std::shared_ptr<ic4::QueueSink> queueSink;
 
     // Static callback function for trackbar
     static void onExposureChange(int value, void* userdata);
@@ -89,47 +104,32 @@ public:
 
     // List available cameras using IC4
     void listCameras();
-
     // Connect to camera by index
     bool connect(int cameraIndex = 0);
-
     // Disconnect camera
     void disconnect();
-
     // Set exposure time in microseconds
     bool setExposure(double exposureUs);
-
     // Get current exposure value
     double getExposure();
-
     // Get exposure range
     bool getExposureRange(double& min, double& max);
-
     // Display current exposure information
     void displayExposureInfo();
-
     // Start grabbing frames with parameter control window
     bool startGrabbing();
-
     // Stop grabbing
     bool stopGrabbing();
-
     // Check if camera is connected
     bool connected() const { return isConnected; }
-
     // Check if camera is grabbing
     bool grabbing() const { return isGrabbing; }
-
     bool toggleAutoExposureMode();
-
     // Initialize parameter control window
     void initParameterControlWindow();
-
     // Update slider from current exposure value
     void updateSliderFromExposure();
-
-	void updateParameterDisplay();
-
+    void updateParameterDisplay();
     bool enableTriggerMode();
     bool disableTriggerMode();
     bool setTriggerSource(const std::string& source = "Software"); // "Software", "Line1", etc.
@@ -139,5 +139,4 @@ public:
     // Trigger configuration
     bool configureTrigger(const std::string& source = "Software", double delay = 0.0);
 };
-
 #endif // TISCAMERAIC4_H

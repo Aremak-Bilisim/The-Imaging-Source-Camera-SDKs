@@ -305,7 +305,6 @@ void TISCameraIC4::displayExposureInfo() {
 }
 
 // Start grabbing frames with parameter control window
-// Start grabbing frames with parameter control window
 bool TISCameraIC4::startGrabbing() {
     if (!isConnected) {
         std::cerr << "Camera not connected." << std::endl;
@@ -318,126 +317,105 @@ bool TISCameraIC4::startGrabbing() {
     }
 
     try {
-
         // Initialize the parameter control window
         initParameterControlWindow();
 
         grabber.devicePropertyMap().setValue(ic4::PropId::Width, width);
         grabber.devicePropertyMap().setValue(ic4::PropId::Height, height);
 
-		ic4::Error err;
-		GrabbingImage listener;
-        auto map = grabber.devicePropertyMap(err);
-        auto sink = ic4::QueueSink::create(listener, ic4::PixelFormat::BGR8, err);
-        
-        if (!sink)
-        {
+        ic4::Error err;
+
+        // Create the frame listener
+        frameListener = std::make_shared<GrabbingImage>();
+
+        // Create the queue sink with our listener
+        queueSink = ic4::QueueSink::create(*frameListener, ic4::PixelFormat::BGR8, err);
+
+        if (!queueSink) {
             std::cerr << "Failed to create sink: " << err.message() << std::endl;
-            return -3;
+            return false;
         }
 
         // Start the video stream into the sink
-        if (!grabber.streamSetup(sink, ic4::StreamSetupOption::AcquisitionStart, err))
-        {
+        if (!grabber.streamSetup(queueSink, ic4::StreamSetupOption::AcquisitionStart, err)) {
             std::cerr << "Failed to setup stream: " << err.message() << std::endl;
-            return -4;
+            return false;
         }
-
 
         isGrabbing = true;
 
         std::cout << "Starting camera feed. Use the exposure slider in 'Parameter Control' window." << std::endl;
         std::cout << "Press ESC to exit, 't' to trigger (if trigger mode enabled)..." << std::endl;
 
-		double exp = getExposure();
+        // Create display window
+        cv::namedWindow("Camera Feed", cv::WINDOW_NORMAL);
+        cv::resizeWindow("Camera Feed", width, height);
 
+        // Main display loop
         while (isGrabbing) {
+            cv::Mat currentFrame;
 
-
-            int ch = std::getchar();
-            if (ch == 'q')
-                break;
-
-            // Execute software trigger
-            if (!map.executeCommand(ic4::PropId::TriggerSoftware, err))
-            {
-                std::cerr << "Failed to perform software trigger: " << err.message() << std::endl;
-                continue;
+            // Get the latest frame from the listener
+            if (frameListener->getLatestFrame(currentFrame)) {
+                // Display the frame
+                cv::imshow("Camera Feed", currentFrame);
+            }
+            else {
+                // If no frame available, show a waiting message
+                cv::Mat waitingImage = cv::Mat::zeros(480, 640, CV_8UC3);
+                cv::putText(waitingImage, "Waiting for frames...", cv::Point(50, 240),
+                    cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(255, 255, 255), 2);
+                cv::imshow("Camera Feed", waitingImage);
             }
 
-            displayExposureInfo();
-            setExposure(exp);
-			exp += 1000;
-            //int key = cv::waitKey(1) & 0xFF;
+            // Handle key presses
+            int key = cv::waitKey(1) & 0xFF;
 
-            //// Check for ESC key to exit
-            //if (key == 27) {  // ESC key
-            //    std::cout << "ESC key pressed. Exiting display loop..." << std::endl;
-            //    break;
-            //}
+            // Check for ESC key to exit
+            if (key == 27) {  // ESC key
+                std::cout << "ESC key pressed. Exiting display loop..." << std::endl;
+                break;
+            }
 
-            //// Handle software trigger if trigger mode is enabled
-            //if (key == 't' || key == 'T') {
-            //    if (triggermodeEnabled) {
-            //        try {
-            //            auto map = grabber.devicePropertyMap();
-            //            map.executeCommand(ic4::PropId::TriggerSoftware);
-            //            std::cout << "Software trigger sent." << std::endl;
-            //        }
-            //        catch (const std::exception& e) {
-            //            std::cerr << "Error sending software trigger: " << e.what() << std::endl;
-            //        }
-            //    }
-            //}
+            // Handle software trigger if trigger mode is enabled
+            if ((key == 't' || key == 'T') && triggerModeEnabled) {
+                if (!sendSoftwareTrigger()) {
+                    std::cerr << "Failed to send software trigger." << std::endl;
+                }
+            }
 
-            //// Capture frame based on trigger mode
-            //if (!triggermodeEnabled) {
-            //    // Free-run mode: try to get a frame
-            //    try {
-            //        auto buffer = sink->snapSingle(1000);
-            //        if (buffer) {
-            //            auto mat = ic4interop::OpenCV::wrap(*buffer);
-            //            cv::imshow("display", mat);
-            //        }
-            //        else {
-            //            std::cout << "No frame received (timeout or invalid buffer)" << std::endl;
-            //        }
-            //    }
-            //    catch (const std::exception& e) {
-            //        std::cerr << "Error capturing frame: " << e.what() << std::endl;
-            //        // Continue instead of breaking to avoid stopping on temporary errors
-            //    }
-            //}
-            //else {
-            //    // Trigger mode: we need to handle this differently
-            //    // For now, just display a message or previous frame
-            //    static cv::Mat lastFrame;
-            //    if (!lastFrame.empty()) {
-            //        cv::imshow("display", lastFrame);
-            //    }
-            //    else {
-            //        // Create a blank image with instructions
-            //        cv::Mat infoImage = cv::Mat::zeros(300, 600, CV_8UC3);
-            //        cv::putText(infoImage, "Trigger Mode Active", cv::Point(50, 100),
-            //            cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(255, 255, 255), 2);
-            //        cv::putText(infoImage, "Press 't' to trigger", cv::Point(50, 150),
-            //            cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(200, 200, 200), 2);
-            //        cv::putText(infoImage, "ESC to exit", cv::Point(50, 200),
-            //            cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(200, 200, 200), 2);
-            //        cv::imshow("display", infoImage);
-            //    }
-            //}
+            // Handle exposure changes from slider (OpenCV trackbar callbacks are handled automatically)
+            // Update parameter display periodically
+            static int displayUpdateCounter = 0;
+            if (displayUpdateCounter++ % 30 == 0) { // Update every 30 frames
+                updateParameterDisplay();
 
-            //// Update parameter display periodically
-            //static int frameCount = 0;
-            //if (frameCount++ % 30 == 0) { // Update every 30 frames
-            //    updateParameterDisplay();
-            //}
+                // Optional: Print frame rate info
+                static auto lastTime = std::chrono::steady_clock::now();
+                auto currentTime = std::chrono::steady_clock::now();
+                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count();
+
+                if (elapsed > 1000) { // Every second
+                    int frameCount = frameListener->getFrameCount();
+                    std::cout << "Frames received: " << frameCount << std::endl;
+                    lastTime = currentTime;
+                }
+            }
+
+            // Small delay to prevent excessive CPU usage
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
         // Cleanup after loop exits
         isGrabbing = false;
-        cv::destroyAllWindows();
+        cv::destroyWindow("Camera Feed");
+        cv::destroyWindow("Parameter Control");
+
+        // Stop the stream
+        if (!grabber.streamStop(err)) {
+            std::cerr << "Error stopping stream: " << err.message() << std::endl;
+        }
+
         std::cout << "Stopped grabbing frames." << std::endl;
         return true;
 
@@ -458,7 +436,6 @@ bool TISCameraIC4::startGrabbing() {
         return false;
     }
 }
-
 // Stop grabbing
 bool TISCameraIC4::stopGrabbing() {
     if (!isGrabbing) {
@@ -620,29 +597,16 @@ bool TISCameraIC4::configureTrigger(const std::string& source, double delay) {
 
     try {
         auto map = grabber.devicePropertyMap();
+        map.setValue(ic4::PropId::TriggerMode, "Off");
 
-        // Disable trigger first to make configuration changes
-        if (!map.setValue(ic4::PropId::TriggerMode, "Off"))
-            std::cout << "ERROR";
         ic4::Error err;
-        /*if (!map.executeCommand(ic4::PropId::TriggerSoftware, err))
-        {
-            std::cout << "Failed to perform software trigger: " << err.message() << std::endl;
-        }*/
 
-        // Set trigger delay if supported and non-zero
         if (delay > 0.0) {
-            try {
-                map.setValue(ic4::PropId::TriggerDelay, delay);
-                std::cout << "Trigger delay set to: " << delay << " μs" << std::endl;
-            }
-            catch (const std::exception&) {
-                std::cout << "Trigger delay not supported or error setting delay." << std::endl;
-            }
+            map.setValue(ic4::PropId::TriggerDelay, delay);
         }
 
         // Enable trigger mode
-        map.setValue(ic4::PropId::TriggerMode, "Off");
+        map.setValue(ic4::PropId::TriggerMode, "On");
 
         triggerModeEnabled = true;
         currentTriggerSource = source;
