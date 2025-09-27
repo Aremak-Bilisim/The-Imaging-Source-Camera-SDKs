@@ -401,23 +401,7 @@ bool TISCameraIC4::startGrabbing() {
                 }
             }
 
-            // Handle exposure changes from slider (OpenCV trackbar callbacks are handled automatically)
-            // Update parameter display periodically
-            static int displayUpdateCounter = 0;
-            if (displayUpdateCounter++ % 30 == 0) { // Update every 30 frames
-                updateParameterDisplay();
-
-                // Optional: Print frame rate info
-                static auto lastTime = std::chrono::steady_clock::now();
-                auto currentTime = std::chrono::steady_clock::now();
-                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count();
-
-                if (elapsed > 1000) { // Every second
-                    int frameCount = frameListener->getFrameCount();
-                    std::cout << "Frames received: " << frameCount << std::endl;
-                    lastTime = currentTime;
-                }
-            }
+            updateParameterDisplay();
             
         }
 

@@ -14,7 +14,6 @@ private:
     std::mutex frame_mutex_;
     cv::Mat latest_frame_;
     std::atomic<bool> new_frame_available_{ false };
-    int counter_{ 0 };
 
 public:
     GrabbingImage() = default;
@@ -42,12 +41,7 @@ public:
                 latest_frame_ = mat.clone(); // Clone to ensure we have our own copy
                 new_frame_available_ = true;
             }
-
-            counter_ += 1;
-            // Optional: print frame count occasionally
-            if (counter_ % 30 == 0) {
-                std::cout << "Frames received: " << counter_ << std::endl;
-            }
+            
         }
     }
 
@@ -69,7 +63,6 @@ public:
         return new_frame_available_;
     }
 
-    int getFrameCount() const { return counter_; }
 };
 
 class TISCameraIC4 {
