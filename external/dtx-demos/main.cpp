@@ -4,18 +4,7 @@
 #include <thread>   // for sleep
 #include <chrono>
 
-
-#include "IVmSolution.h"
-#include "VMException.h"
-#include "IVmProcedure.h"
-#include "IVmImageSource.h"
-#include "IVmCalculator.h"
-
-using namespace VisionMasterSDK;
-using namespace VisionMasterSDK::VmSolution;
-using namespace VisionMasterSDK::VmProcedure;
-using namespace VisionMasterSDK::ImageSourceModule;
-using namespace VisionMasterSDK::CalculatorModule;
+#include "VisionMasterProcessor.h"
 
 
 
@@ -27,6 +16,20 @@ int main() {
         return 4;
     }
 
+  //  VisionMasterProcessor processor;
+
+  //  while (true) {
+  //      /*string results = processor.runAndGetResults();
+  //      cout << "Results: " << results << endl;*/
+
+		//processor.runProcedure();
+  //      processor.getResults();
+  //      CalculatorResults* res = processor.getCalculatorResults();
+  //      std::cout << "Float Result: " << res->GetResult(0)->pFloatValue[0] << std::endl;
+  //  }
+
+
+    /*
 	const string& solutionPath = "C:\\Users\\User\\Desktop\\The-Imaging-Source-Camera-SDKs\\external\\dtx-demos\\ok_nok.solw";
     const string& procedureName = "Flow1";
 	const string& moduleImageSourceName = "Image Source1";
@@ -153,9 +156,9 @@ int main() {
     }
     std::cout << "\n------------------------------------" << std::endl;
 
+    */
 
-
-
+    /*
     ObjectList procedureObjList = pVmSol->GetAllProcedureObjects();
     ProcessInfoList* procedureList = pVmSol->GetAllProcedureList();
     ModuleInfoList* moduInfoList = pVmSol->GetAllModuleList();
@@ -183,7 +186,7 @@ int main() {
             }
         }
         std::cout << "Reserved Fields: " << (hasNonZeroReserved ? "Contains data" : "All zeros") << std::endl;
-    }
+    }*/
 
     
 

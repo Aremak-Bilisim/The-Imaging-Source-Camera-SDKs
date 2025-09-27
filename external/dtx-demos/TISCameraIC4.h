@@ -1,7 +1,9 @@
 #ifndef TISCAMERAIC4_H
 #define TISCAMERAIC4_H
+
 #include <ic4/ic4.h>
 #include <ic4-interop/interop-OpenCV.h>
+#include "VisionMasterProcessor.h"
 #include <string>
 #include <opencv2/opencv.hpp>
 #include <mutex>
@@ -83,6 +85,7 @@ private:
     int height = 480;
     bool triggerModeEnabled = false;
     std::string currentTriggerSource = "Software";
+    VisionMasterProcessor processor;
 
     // Frame grabbing
     std::shared_ptr<GrabbingImage> frameListener;

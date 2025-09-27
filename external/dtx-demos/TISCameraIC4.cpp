@@ -366,7 +366,42 @@ bool TISCameraIC4::startGrabbing() {
 
             // Get the latest frame from the listener
             if (frameListener->getLatestFrame(currentFrame)) {
-                // Display the frame
+                processor.runProcedure();
+                processor.getResults();
+                CalculatorResults* res = processor.getCalculatorResults();
+                float result = res->GetResult(0)->pFloatValue[0];
+
+                std::string statusText;
+                cv::Scalar color;
+
+                if (result == 1.0f) {
+                    statusText = "OK";
+                    color = cv::Scalar(0, 255, 0); // Green color (BGR format)
+                }
+                else {
+                    statusText = "NOK";
+                    color = cv::Scalar(0, 0, 255); // Red color for NOK (BGR format)
+                }
+
+                cv::Point textPosition(30, 50); // x=30, y=50 from top-left
+
+                // Font settings
+                int fontFace = cv::FONT_HERSHEY_SIMPLEX;
+                double fontScale = 1.5;
+                int thickness = 3;
+
+                // Add background for better text visibility
+                cv::Size textSize = cv::getTextSize(statusText, fontFace, fontScale, thickness, 0);
+                cv::rectangle(currentFrame,
+                    textPosition - cv::Point(10, textSize.height + 5),
+                    textPosition + cv::Point(textSize.width + 10, 10),
+                    cv::Scalar(0, 0, 0), -1); 
+
+                // Put the text on the image
+                cv::putText(currentFrame, statusText, textPosition,
+                    fontFace, fontScale, color, thickness);
+
+                // Display the frame with text overlay
                 cv::imshow("Camera Feed", currentFrame);
             }
             else {
