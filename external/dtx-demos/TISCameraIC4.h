@@ -16,6 +16,7 @@ private:
     std::mutex frame_mutex_;
     cv::Mat latest_frame_;
     std::atomic<bool> new_frame_available_{ false };
+    VisionMasterProcessor processor;
 
 public:
     GrabbingImage() = default;
@@ -36,6 +37,9 @@ public:
             }
 
             auto mat = ic4interop::OpenCV::wrap(*buffer);
+            processor.runProcedure();
+            processor.getResults();
+
 
             // Store the latest frame with thread safety
             {
@@ -45,6 +49,11 @@ public:
             }
             
         }
+    }
+
+    float getResult() {
+        CalculatorResults* res = processor.getCalculatorResults();
+        return res->GetResult(0)->pFloatValue[0];
     }
 
     // Get the latest frame (thread-safe)
@@ -85,7 +94,6 @@ private:
     int height = 480;
     bool triggerModeEnabled = false;
     std::string currentTriggerSource = "Software";
-    VisionMasterProcessor processor;
 
     // Frame grabbing
     std::shared_ptr<GrabbingImage> frameListener;

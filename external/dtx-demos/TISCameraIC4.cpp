@@ -366,14 +366,10 @@ bool TISCameraIC4::startGrabbing() {
 
             // Get the latest frame from the listener
             if (frameListener->getLatestFrame(currentFrame)) {
-                processor.runProcedure();
-                processor.getResults();
-                CalculatorResults* res = processor.getCalculatorResults();
-                float result = res->GetResult(0)->pFloatValue[0];
-
                 std::string statusText;
                 cv::Scalar color;
 
+				float result = frameListener->getResult();
                 if (result == 1.0f) {
                     statusText = "OK";
                     color = cv::Scalar(0, 255, 0); // Green color (BGR format)
